@@ -311,11 +311,34 @@ public class GameManager : MonoBehaviour
         cameraRig.Shake(0.15f, 0.1f);
         hud.ShowMessage("¡GOLPE!  -" + amount, new Color(0.5f, 1f, 0.6f), 0.8f);
         StartCoroutine(HitStop());
+
+        // Para avisar cuando el jefe cambia de fase (cambio del playtest).
+        bool wasEnraged = boss.IsEnraged;
+        bool wasDoubleBlock = boss.BlocksPerTurn == 2;
+
         boss.Health.TakeDamage(amount);
         hud.SetBossHealth(boss.Health.Current, boss.Health.Max);
         hud.SetRage(boss.IsEnraged && !boss.Health.IsDead);
         boss.UpdateRageEffects();
-        if (boss.Health.IsDead) EndGame(true);
+        if (boss.Health.IsDead)
+        {
+            EndGame(true);
+            return;
+        }
+
+        if (!wasEnraged && boss.IsEnraged)
+            StartCoroutine(PhaseAlert("¡FURIA!  Golpes de 20 y 40", new Color(1f, 0.45f, 0.1f)));
+        else if (!wasDoubleBlock && boss.BlocksPerTurn == 2)
+            StartCoroutine(PhaseAlert("¡AHORA BLOQUEA 2!", new Color(0.6f, 0.8f, 1f)));
+    }
+
+    // Espera a que termine el mensaje del golpe y luego muestra el aviso de fase.
+    private IEnumerator PhaseAlert(string text, Color color)
+    {
+        yield return new WaitForSecondsRealtime(0.9f);
+        if (IsOver) yield break;
+        cameraRig.Shake(0.35f, 0.2f);
+        hud.ShowMessage(text, color, 2f);
     }
 
     private IEnumerator HitStop()

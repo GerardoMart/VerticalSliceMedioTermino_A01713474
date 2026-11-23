@@ -19,6 +19,6 @@ public static class AnimParams
 public static class GameText
 {
     public const string EnemyTurn      = "TURNO DEL JEFE  ·  ¡Esquiva con A / D!";
-    public const string PlayerTurn     = "TU TURNO  ·  Elige un recuadro (1 - 4)";
-    public const string GuardBreakTurn = "¡GUARDIA ROTA!  ·  Golpea dos veces (1 - 4)";
+    public const string PlayerTurn     = "TU TURNO  ·  Presiona 1, 2, 3 o 4 (o haz clic en un recuadro)";
+    public const string GuardBreakTurn = "¡GUARDIA ROTA!  ·  Golpea dos veces: presiona 1, 2, 3 o 4";
 }
