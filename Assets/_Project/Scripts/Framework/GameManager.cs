@@ -23,8 +23,16 @@ public class GameManager : MonoBehaviour
 
     [Header("Turno del jefe")]
     [SerializeField] private int attacksPerTurn = 3;
-    [Tooltip("Segundos que dura el aviso amarillo antes de volverse rojo.")]
-    [SerializeField] private float warningTime = 1.5f;
+    [Tooltip("Segundos del aviso amarillo en los ataques 1 y 2, fase normal (100 a 31 de vida).")]
+    [SerializeField] private float warningNormal = 0.82f;
+    [Tooltip("Segundos del aviso del tercer ataque (golpe fuerte), fase normal.")]
+    [SerializeField] private float strongWarningNormal = 0.75f;
+    [Tooltip("Segundos del aviso en los ataques 1 y 2 en furia (30 de vida o menos).")]
+    [SerializeField] private float warningRage = 0.63f;
+    [Tooltip("Segundos del aviso del tercer ataque en furia.")]
+    [SerializeField] private float strongWarningRage = 0.58f;
+    [Tooltip("El tercer ataque (golpe fuerte) multiplica el daño: 15 -> 30 normal, 20 -> 40 en furia.")]
+    [SerializeField] private float strongAttackMultiplier = 2f;
     [Tooltip("Segundos que la zona roja hace daño.")]
     [SerializeField] private float activeTime = 0.45f;
     [SerializeField] private float pauseBetweenAttacks = 0.45f;
@@ -39,7 +47,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float hitboxForgiveness = 0.04f;
 
     [Header("Turno del jugador")]
-    [SerializeField] private int playerDamage = 10;
+    [SerializeField] private int playerDamagePerHit = 15;
     [SerializeField] private int guardWindow = 5;
     [SerializeField] private int guardThreshold = 3;
     [SerializeField] private int guardBreakHits = 2;
@@ -141,6 +149,15 @@ public class GameManager : MonoBehaviour
         {
             hud.ShowTurn(GameText.EnemyTurn + "   (" + (i + 1) + "/" + attacksPerTurn + ")");
 
+            // Cambios del playtest: avisos más cortos (más aún en furia) y el tercer
+            // ataque es un golpe fuerte, con menos aviso y el doble de daño.
+            bool isStrongAttack = i == attacksPerTurn - 1;
+            float warningTime;
+            if (boss.IsEnraged) warningTime = isStrongAttack ? strongWarningRage : warningRage;
+            else warningTime = isStrongAttack ? strongWarningNormal : warningNormal;
+            int damage = boss.DamagePerHit;
+            if (isStrongAttack) damage = Mathf.RoundToInt(damage * strongAttackMultiplier);
+
             // 1) Patrón justo a partir de dónde está el jugador AHORA.
             int playerLane = field.LaneOf(player.transform.position.x);
             int reach = Mathf.FloorToInt(player.MoveSpeed * warningTime * 0.75f / field.LaneWidth);
@@ -151,6 +168,7 @@ public class GameManager : MonoBehaviour
             // 2) Aviso amarillo.
             field.ShowPattern(pattern, DangerZone.State.Warning);
             PlaySfx(Sfx.Warning);
+            if (isStrongAttack) hud.ShowMessage("¡GOLPE FUERTE!", new Color(1f, 0.55f, 0.15f), warningTime);
             yield return new WaitForSeconds(Mathf.Max(0f, warningTime - attackAnticipation));
             boss.PlayAttack();
             yield return new WaitForSeconds(Mathf.Min(attackAnticipation, warningTime));
@@ -167,7 +185,7 @@ public class GameManager : MonoBehaviour
                 if (!wasHit && field.Overlaps(player.HeadHitbox.bounds, pattern, hitboxForgiveness))
                 {
                     wasHit = true;
-                    DamagePlayer(boss.DamagePerHit);
+                    DamagePlayer(damage);
                 }
                 t += Time.deltaTime;
                 yield return null;
@@ -219,7 +237,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            DamageBoss(playerDamage);
+            DamageBoss(playerDamagePerHit);
         }
 
         if (!IsOver)
@@ -262,7 +280,7 @@ public class GameManager : MonoBehaviour
             player.PlayAttack();
             yield return new WaitForSeconds(0.2f);
             choiceUI.Reveal(choice - 1, noBlocks);
-            DamageBoss(playerDamage);
+            DamageBoss(playerDamagePerHit);
 
             yield return new WaitForSeconds(0.7f);
             choiceUI.Show(false);

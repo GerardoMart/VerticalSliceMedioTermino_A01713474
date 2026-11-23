@@ -6,8 +6,11 @@ using UnityEngine;
 public class BossController : MonoBehaviour
 {
     [Header("Reglas")]
-    [SerializeField] private int baseDamage = 10;
-    [Tooltip("Con esta vida o menos hace el doble de daño.")]
+    [Tooltip("Daño por golpe en la fase normal (100 a 31 de vida).")]
+    [SerializeField] private int normalDamage = 15;
+    [Tooltip("Daño por golpe en furia.")]
+    [SerializeField] private int rageDamage = 20;
+    [Tooltip("Con esta vida o menos entra en furia.")]
     [SerializeField] private int rageThreshold = 30;
     [Tooltip("Con esta vida o menos bloquea 2 recuadros en lugar de 1.")]
     [SerializeField] private int doubleBlockThreshold = 40;
@@ -21,7 +24,7 @@ public class BossController : MonoBehaviour
 
     public Health Health { get; private set; }
     public bool IsEnraged => Health.Current <= rageThreshold;
-    public int DamagePerHit => IsEnraged ? baseDamage * 2 : baseDamage;
+    public int DamagePerHit => IsEnraged ? rageDamage : normalDamage;
     public int BlocksPerTurn => Health.Current <= doubleBlockThreshold ? 2 : 1;
 
     private void Awake()
